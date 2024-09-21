@@ -112,6 +112,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    public String getUserNameByEmail(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT name FROM users WHERE email = ?", new String[]{email});
+
+        if (cursor.moveToFirst()) {
+            String name = cursor.getString(0);
+            cursor.close();
+            return name;  // Return the name if found
+        } else {
+            cursor.close();
+            return null;  // Return null if no user found with that email
+        }
+    }
+
 
 
 }

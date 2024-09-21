@@ -58,7 +58,8 @@ public class SignIn extends AppCompatActivity {
                     if(checkCredentials==true)
                     {
                         Toast.makeText(SignIn.this,"Login Successfully!!!",Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                        Intent intent = new Intent(SignIn.this, DashBoard.class);
+                        intent.putExtra("email", email);
                         startActivity(intent);
                     }
                     else {

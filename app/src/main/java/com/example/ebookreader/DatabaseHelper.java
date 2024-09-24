@@ -8,6 +8,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
 
@@ -15,7 +18,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public DatabaseHelper(@Nullable Context context)
     {
-        super(context,databaseName,null,2);
+        super(context,databaseName,null,3);
     }
 
     @Override
@@ -23,6 +26,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         sqLiteDatabase.execSQL("create table users(name TEXT not null,email TEXT primary key,password TEXT)");
         sqLiteDatabase.execSQL("CREATE TABLE books(" +
+                "email TEXT NOT NULL, "+
                 "book_name TEXT NOT NULL, " +
                 "author_name TEXT NOT NULL, " +
                 "genre TEXT NOT NULL, " +
@@ -84,9 +88,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public Boolean insertBookData(String bookName, String authorName, String genre, String publisher, String publicationYear, String coverImageUri, String pdfUri) {
+    public Boolean insertBookData(String email,String bookName, String authorName, String genre, String publisher, String publicationYear, String coverImageUri, String pdfUri) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
+        contentValues.put("email",email);
         contentValues.put("book_name", bookName);
         contentValues.put("author_name", authorName);
         contentValues.put("genre", genre);
@@ -127,5 +132,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+    public List<Book> getAllBooks() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM books", null);
+
+        List<Book> books = new ArrayList<>();
+
+        if (cursor.moveToFirst()) {
+            do {
+                String email = cursor.getString(cursor.getColumnIndex("email"));
+                String bookName = cursor.getString(cursor.getColumnIndex("book_name"));
+                String authorName = cursor.getString(cursor.getColumnIndex("author_name"));
+                String genre = cursor.getString(cursor.getColumnIndex("genre"));
+                String publisher = cursor.getString(cursor.getColumnIndex("publisher"));
+                String publicationYear = cursor.getString(cursor.getColumnIndex("publication_year"));
+                String coverImage = cursor.getString(cursor.getColumnIndex("cover_image"));
+                String pdf = cursor.getString(cursor.getColumnIndex("pdf"));
+
+                // Create a Book object and add it to the list
+                books.add(new Book(email, bookName, authorName, genre, publisher, publicationYear, coverImage, pdf));
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        return books;
+    }
 
 }

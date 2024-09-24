@@ -26,6 +26,7 @@ public class UploadBook extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST = 1;
     private static final int PICK_PDF_REQUEST = 2;
 
+    String email;
     private EditText editTextBookName, editTextAuthorName, editTextGenre, editTextPublisher;
     private Spinner spinnerPublicationYear;
     private Button buttonUploadCover, buttonAttachPdf, buttonSubmit;
@@ -42,6 +43,8 @@ public class UploadBook extends AppCompatActivity {
         setContentView(R.layout.activity_upload_book);
 
         databaseHelper = new DatabaseHelper(this);
+        Intent intent = getIntent();
+        email = intent.getStringExtra("email");
 
         // Create a list of years for the spinner
         ArrayList<String> years = new ArrayList<>();
@@ -148,7 +151,7 @@ public class UploadBook extends AppCompatActivity {
             Toast.makeText(this, "Book with this name already exists", Toast.LENGTH_SHORT).show();
         } else {
             // Insert book data
-            Boolean insertSuccess = databaseHelper.insertBookData(bookName, authorName, genre, publisher, publicationYear, coverImageUri, pdfUriString);
+            Boolean insertSuccess = databaseHelper.insertBookData(email,bookName, authorName, genre, publisher, publicationYear, coverImageUri, pdfUriString);
 
             if (insertSuccess) {
                 Toast.makeText(this, "Book Submitted Successfully", Toast.LENGTH_SHORT).show();

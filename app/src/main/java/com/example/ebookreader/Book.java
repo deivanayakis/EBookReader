@@ -24,7 +24,6 @@ public class Book {
         this.pdf = pdf;
     }
 
-    // Getters
     public String getBookName() {
         return bookName;
     }
@@ -43,5 +42,10 @@ public class Book {
 
     public String getCoverImage(){
         return coverImage;
+    }
+
+    public String getPdf()
+    {
+        return pdf;
     }
 }

@@ -30,7 +30,6 @@ public class SignUp extends AppCompatActivity {
         loginRedirectText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Create an Intent to start the new activity
                 Intent intent = new Intent(SignUp.this,SignIn.class);
                 startActivity(intent);
             }

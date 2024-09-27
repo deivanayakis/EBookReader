@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -46,7 +48,6 @@ public class UploadBook extends AppCompatActivity {
         Intent intent = getIntent();
         email = intent.getStringExtra("email");
 
-        // Create a list of years for the spinner
         ArrayList<String> years = new ArrayList<>();
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
 
@@ -54,7 +55,6 @@ public class UploadBook extends AppCompatActivity {
             years.add(String.valueOf(year));
         }
 
-        // Initialize views
         editTextBookName = findViewById(R.id.editTextBookName);
         editTextAuthorName = findViewById(R.id.editTextAuthorName);
         editTextGenre = findViewById(R.id.editTextGenre);
@@ -69,7 +69,6 @@ public class UploadBook extends AppCompatActivity {
         yearAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerPublicationYear.setAdapter(yearAdapter);
 
-        // Set onClickListeners
         buttonUploadCover.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -136,13 +135,23 @@ public class UploadBook extends AppCompatActivity {
         String coverImageUri = (imageUri != null) ? imageUri.toString() : null;
         String pdfUriString = (pdfUri != null) ? pdfUri.toString() : null;
 
-        // Simple validation check
         if (bookName.isEmpty() || authorName.isEmpty() || genre.isEmpty() || publisher.isEmpty() || imageUri == null || pdfUri == null) {
             Toast.makeText(this, "Please fill all the fields and attach files", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Check if the book already exists
+        Bitmap coverImageBitmap;
+        String coverImageBase64 = null;
+
+        try {
+            coverImageBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            coverImageBase64 = encodeToBase64(coverImageBitmap);  // Call the helper method to encode Bitmap to Base64
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Boolean bookExists = databaseHelper.checkBookExists(bookName);
 
         Log.d("MyTag", "Checked");
@@ -150,8 +159,7 @@ public class UploadBook extends AppCompatActivity {
         if (bookExists) {
             Toast.makeText(this, "Book with this name already exists", Toast.LENGTH_SHORT).show();
         } else {
-            // Insert book data
-            Boolean insertSuccess = databaseHelper.insertBookData(email,bookName, authorName, genre, publisher, publicationYear, coverImageUri, pdfUriString);
+            Boolean insertSuccess = databaseHelper.insertBookData(email,bookName, authorName, genre, publisher, publicationYear, coverImageBase64 , pdfUriString);
 
             if (insertSuccess) {
                 Toast.makeText(this, "Book Submitted Successfully", Toast.LENGTH_SHORT).show();
@@ -162,7 +170,12 @@ public class UploadBook extends AppCompatActivity {
         }
     }
 
-    // Clear the form after successful submission
+    private String encodeToBase64(Bitmap image) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);  // Compress the image to PNG format
+        byte[] imageBytes = byteArrayOutputStream.toByteArray();
+        return Base64.encodeToString(imageBytes, Base64.DEFAULT);  // Return Base64-encoded string
+    }
     private void clearForm() {
         editTextBookName.setText("");
         editTextAuthorName.setText("");

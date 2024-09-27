@@ -5,6 +5,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 
 import androidx.annotation.Nullable;
 
@@ -18,7 +21,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public DatabaseHelper(@Nullable Context context)
     {
-        super(context,databaseName,null,3);
+        super(context,databaseName,null,4);
     }
 
     @Override
@@ -88,7 +91,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public Boolean insertBookData(String email,String bookName, String authorName, String genre, String publisher, String publicationYear, String coverImageUri, String pdfUri) {
+    public Boolean insertBookData(String email,String bookName, String authorName, String genre, String publisher, String publicationYear, String coverImage, String pdfUri) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("email",email);
@@ -97,11 +100,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contentValues.put("genre", genre);
         contentValues.put("publisher", publisher);
         contentValues.put("publication_year", publicationYear);
-        contentValues.put("cover_image", coverImageUri);
+        contentValues.put("cover_image", coverImage);
         contentValues.put("pdf", pdfUri);
 
         long result = db.insert("books", null, contentValues);
-        return result != -1;  // Return true if insertion is successful
+        return result != -1;
     }
 
     public Boolean checkBookExists(String bookName) {
@@ -110,10 +113,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         if (cursor.getCount() > 0) {
             cursor.close();
-            return true;  // Book already exists
+            return true;
         } else {
             cursor.close();
-            return false;  // Book does not exist
+            return false;
         }
     }
 
@@ -124,10 +127,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (cursor.moveToFirst()) {
             String name = cursor.getString(0);
             cursor.close();
-            return name;  // Return the name if found
+            return name;
         } else {
             cursor.close();
-            return null;  // Return null if no user found with that email
+            return null;
         }
     }
 
@@ -149,13 +152,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 String coverImage = cursor.getString(cursor.getColumnIndex("cover_image"));
                 String pdf = cursor.getString(cursor.getColumnIndex("pdf"));
 
-                // Create a Book object and add it to the list
+                Bitmap coverImageBitmap = decodeBase64(coverImage);
+
+
                 books.add(new Book(email, bookName, authorName, genre, publisher, publicationYear, coverImage, pdf));
             } while (cursor.moveToNext());
         }
 
         cursor.close();
         return books;
+    }
+
+
+    private Bitmap decodeBase64(String encodedImage) {
+        byte[] decodedBytes = Base64.decode(encodedImage, Base64.DEFAULT);
+        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
     }
 
 }

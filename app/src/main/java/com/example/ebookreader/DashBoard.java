@@ -1,14 +1,20 @@
 package com.example.ebookreader;
 
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -17,6 +23,8 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -55,21 +63,18 @@ public class DashBoard extends AppCompatActivity {
         bookContainer = findViewById(R.id.bookContainer);  // Reference the container in activity_dashboard.xml
         dbHelper = new DatabaseHelper(this);
 
-        // Fetch books from the database
+
         List<Book> books = dbHelper.getAllBooks();
 
-        // Inflate and add each book to the container
         for (Book book : books) {
             addBookToContainer(book);
         }
     }
 
     private void showMenu() {
-        // Create a PopupMenu
         PopupMenu popupMenu = new PopupMenu(this, findViewById(R.id.menu_icon));
         popupMenu.getMenuInflater().inflate(R.menu.dashboard_menu, popupMenu.getMenu());
 
-        // Set click listener for menu items
         popupMenu.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
 
@@ -89,24 +94,26 @@ public class DashBoard extends AppCompatActivity {
             }
         });
 
-        // Show the menu
         popupMenu.show();
     }
 
 
     private void addBookToContainer(Book book) {
-        // Inflate bookitem.xml
         LayoutInflater inflater = LayoutInflater.from(this);
         View bookItemView = inflater.inflate(R.layout.book_item, bookContainer, false);
 
-        // Set book details to views in bookitem.xml
-        TextView bookNameTextView = bookItemView.findViewById(R.id.textView6);  // Book name
-        TextView authorNameTextView = bookItemView.findViewById(R.id.textView7);  // Author name
-        TextView genreTextView = bookItemView.findViewById(R.id.textView8);  // Genre
-        TextView publisherTextView = bookItemView.findViewById(R.id.textView9);  // Publisher
+        TextView bookNameTextView = bookItemView.findViewById(R.id.textView6);
+        TextView authorNameTextView = bookItemView.findViewById(R.id.textView7);
+        TextView genreTextView = bookItemView.findViewById(R.id.textView8);
+        TextView publisherTextView = bookItemView.findViewById(R.id.textView9);
+        ImageView coverImageView = bookItemView.findViewById(R.id.imageView8);
 
-        ImageView coverImage = bookItemView.findViewById(R.id.imageView8);
-
+        if (book.getCoverImage() != null && !book.getCoverImage().isEmpty()) {
+            Bitmap coverImageBitmap = decodeBase64(book.getCoverImage());
+            coverImageView.setImageBitmap(coverImageBitmap);
+        } else {
+            coverImageView.setImageResource(R.drawable.uploadmenu);
+        }
 
 
         bookNameTextView.setText(book.getBookName());
@@ -114,9 +121,34 @@ public class DashBoard extends AppCompatActivity {
         genreTextView.setText(book.getGenre());
         publisherTextView.setText(book.getPublisher());
 
-        // Add the inflated view to the container
         bookContainer.addView(bookItemView);
+        Button readNowButton = bookItemView.findViewById(R.id.button3);
+        readNowButton.setOnClickListener(v -> {
+            String pdfUriString = book.getPdf();
+            Uri pdfUri = Uri.parse(pdfUriString);
+
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(pdfUri, "application/pdf");
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NO_HISTORY);
+
+                PackageManager packageManager = getPackageManager();
+                if (intent.resolveActivity(packageManager) != null) {
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "No PDF reader found. Please install one.", Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception e) {
+                Toast.makeText(this, "Error opening the PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+
     }
 
-
+    private Bitmap decodeBase64(String encodedImage) {
+        byte[] decodedBytes = Base64.decode(encodedImage, Base64.DEFAULT);
+        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+    }
 }
